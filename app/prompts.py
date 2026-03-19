@@ -35,8 +35,11 @@ def classify_request(request_text: str) -> str:
     - The request text
     - Output format instructions (JSON with category, confidence, reasoning)
     """
-    # TODO: Implement this template
-    raise NotImplementedError("Implement classify_request template")
+    return (
+        f"Classify this Memphis 311 service request:\n\n"
+        f"{request_text}\n\n"
+        f"Respond with JSON containing: category, confidence (0.0-1.0), and reasoning."
+    )
 
 
 def classify_with_context(request_text: str, neighborhood: str) -> str:
@@ -50,8 +53,11 @@ def classify_with_context(request_text: str, neighborhood: str) -> str:
     - The neighborhood name
     - Output format instructions
     """
-    # TODO: Implement this template
-    raise NotImplementedError("Implement classify_with_context template")
+    return (
+        f"Classify this Memphis 311 service request from {neighborhood}:\n\n"
+        f"{request_text}\n\n"
+        f"Respond with JSON containing: category, confidence (0.0-1.0), and reasoning."
+    )
 
 
 def batch_classify(requests: list[str]) -> str:
@@ -64,5 +70,9 @@ def batch_classify(requests: list[str]) -> str:
     - Numbered list of requests
     - Output format: JSON array of classification objects
     """
-    # TODO: Implement this template
-    raise NotImplementedError("Implement batch_classify template")
+    requests_text = "\n".join([f"{i+1}. {req}" for i, req in enumerate(requests)])
+    return (
+        f"Classify these Memphis 311 service requests:\n\n"
+        f"{requests_text}\n\n"
+        f"Respond with a JSON array where each element has: category, confidence (0.0-1.0), and reasoning."
+    )

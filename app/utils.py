@@ -108,42 +108,41 @@ def retry_with_correction(
           - valid: bool, whether the final response passed validation
           - errors: list of error strings from the last validation
     """
-    # TODO: Step 3 - Implement the retry loop
-    #
-    # attempt = 0
-    # last_errors = []
-    #
-    # while attempt < max_retries:
-    #     attempt += 1
-    #
-    #     # First attempt: no correction; retries: include correction
-    #     if attempt == 1:
-    #         response = call_fn()
-    #     else:
-    #         error_detail = "; ".join(last_errors)
-    #         correction = f"{correction_prompt} Previous errors: {error_detail}"
-    #         response = call_fn(correction)
-    #
-    #     # Validate the response
-    #     result = validation_fn(response)
-    #     if result["valid"]:
-    #         return {
-    #             "response": response,
-    #             "attempts": attempt,
-    #             "valid": True,
-    #             "errors": [],
-    #         }
-    #
-    #     last_errors = result["errors"]
-    #
-    # # All retries exhausted
-    # return {
-    #     "response": response,
-    #     "attempts": attempt,
-    #     "valid": False,
-    #     "errors": last_errors,
-    # }
-    raise NotImplementedError("Implement retry_with_correction in Step 3")
+    # Step 3 - Implement the retry loop
+    attempt = 0
+    last_errors = []
+    response = None
+
+    while attempt < max_retries:
+        attempt += 1
+
+        # First attempt: no correction; retries: include correction
+        if attempt == 1:
+            response = call_fn()
+        else:
+            error_detail = "; ".join(last_errors)
+            correction = f"{correction_prompt} Previous errors: {error_detail}"
+            response = call_fn(correction)
+
+        # Validate the response
+        result = validation_fn(response)
+        if result["valid"]:
+            return {
+                "response": response,
+                "attempts": attempt,
+                "valid": True,
+                "errors": [],
+            }
+
+        last_errors = result["errors"]
+
+    # All retries exhausted
+    return {
+        "response": response,
+        "attempts": attempt,
+        "valid": False,
+        "errors": last_errors,
+    }
 
 
 # ---------------------------------------------------------------------------

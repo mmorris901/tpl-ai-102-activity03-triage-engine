@@ -19,12 +19,14 @@ def load_routing_rules(path: str | None = None) -> dict:
     Returns:
         dict mapping category names to routing info (department, sla_hours, priority).
     """
-    # TODO: Step 2.1 - Implement this function
-    #   1. Default path to ../data/routing_rules.json relative to this file
-    #   2. Open and parse the JSON file
-    #   3. Return the parsed dict
-    #   4. Handle FileNotFoundError gracefully (return empty dict)
-    raise NotImplementedError("Implement load_routing_rules in Step 2")
+    # Step 2.1 - Implement this function
+    if path is None:
+        path = os.path.join(os.path.dirname(__file__), "..", "data", "routing_rules.json")
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
 
 
 def route_request(classification: dict, rules: dict | None = None) -> dict:
@@ -42,20 +44,32 @@ def route_request(classification: dict, rules: dict | None = None) -> dict:
         sla_hours, priority. Falls back to General Services if category
         not found in rules.
     """
-    # TODO: Step 2.2 - Implement routing logic
-    #
-    # 1. If rules is None, call load_routing_rules()
-    # 2. Look up classification["category"] in the rules dict
-    # 3. If found, merge the routing info into the classification dict:
-    #    - department: from rules
-    #    - sla_hours: from rules
-    #    - priority: from rules
-    # 4. If NOT found, use the "Other" fallback:
-    #    - department: "General Services"
-    #    - sla_hours: 120
-    #    - priority: "low"
-    # 5. Return the merged dict
-    raise NotImplementedError("Implement route_request in Step 2")
+    # Step 2.2 - Implement routing logic
+    if rules is None:
+        rules = load_routing_rules()
+    
+    category = classification.get("category")
+    
+    # Look up routing info
+    if category in rules:
+        routing_info = rules[category]
+    else:
+        # Fallback to "Other"
+        routing_info = rules.get("Other", {
+            "department": "General Services",
+            "sla_hours": 120,
+            "priority": "low"
+        })
+    
+    # Merge classification with routing info
+    result = classification.copy()
+    result.update({
+        "department": routing_info.get("department", "General Services"),
+        "sla_hours": routing_info.get("sla_hours", 120),
+        "priority": routing_info.get("priority", "low")
+    })
+    
+    return result
 
 
 def escalate_priority(routing: dict, reason: str) -> dict:

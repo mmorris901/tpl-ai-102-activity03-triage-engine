@@ -5,6 +5,8 @@ This module defines the JSON schemas used to validate model outputs
 for Memphis 311 request classification and routing.
 """
 
+import jsonschema
+
 # ---------------------------------------------------------------------------
 # Valid categories
 # ---------------------------------------------------------------------------
@@ -45,7 +47,29 @@ VALID_PRIORITIES = {"low", "standard", "high", "critical"}
 #     "additionalProperties": False
 # }
 
-CLASSIFICATION_SCHEMA = {}
+CLASSIFICATION_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "category": {
+            "type": "string",
+            "enum": list(VALID_CATEGORIES),
+            "description": "The 311 request category"
+        },
+        "confidence": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "description": "Confidence level (0.0 to 1.0)"
+        },
+        "reasoning": {
+            "type": "string",
+            "minLength": 5,
+            "description": "Brief explanation of the classification"
+        }
+    },
+    "required": ["category", "confidence", "reasoning"],
+    "additionalProperties": False
+}
 
 
 # ---------------------------------------------------------------------------
@@ -63,7 +87,42 @@ CLASSIFICATION_SCHEMA = {}
 #
 # ROUTING_SCHEMA = { ... }
 
-ROUTING_SCHEMA = {}
+ROUTING_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "category": {
+            "type": "string",
+            "enum": list(VALID_CATEGORIES),
+            "description": "The 311 request category"
+        },
+        "confidence": {
+            "type": "number",
+            "minimum": 0.0,
+            "maximum": 1.0,
+            "description": "Confidence level"
+        },
+        "reasoning": {
+            "type": "string",
+            "description": "Explanation of the classification and routing"
+        },
+        "department": {
+            "type": "string",
+            "description": "Target Memphis city department"
+        },
+        "sla_hours": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Service Level Agreement hours"
+        },
+        "priority": {
+            "type": "string",
+            "enum": list(VALID_PRIORITIES),
+            "description": "Priority level"
+        }
+    },
+    "required": ["category", "confidence", "reasoning", "department", "sla_hours", "priority"],
+    "additionalProperties": False
+}
 
 
 # ---------------------------------------------------------------------------
@@ -81,15 +140,14 @@ def validate_against_schema(data: dict, schema: dict) -> dict:
           - valid: bool
           - errors: list of error message strings (empty if valid)
     """
-    # TODO: Step 2.3 - Implement validation using jsonschema.validate()
-    #
-    # 1. Import jsonschema (at the top of this function or module)
-    # 2. Call jsonschema.validate(data, schema)
-    # 3. Return {"valid": True, "errors": []} on success
-    # 4. Catch jsonschema.ValidationError and return
-    #    {"valid": False, "errors": [str(e.message)]}
-    # 5. Catch any other exception and return a generic error
-    #
-    # Hint: You may also want to handle jsonschema.SchemaError for
-    # malformed schemas (return valid=False with the schema error message).
-    raise NotImplementedError("Implement validate_against_schema in Step 2")
+    # Step 2.3 - Implement validation using jsonschema.validate()
+    try:
+        jsonschema.validate(data, schema)
+        return {"valid": True, "errors": []}
+    except jsonschema.ValidationError as e:
+        return {"valid": False, "errors": [e.message]}
+    except jsonschema.SchemaError as e:
+        return {"valid": False, "errors": [f"Schema error: {e.message}"]}
+    except Exception as e:
+        return {"valid": False, "errors": [f"Validation error: {str(e)}"]}
+

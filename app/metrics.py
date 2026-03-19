@@ -28,11 +28,11 @@ def accuracy(results: list[dict]) -> float:
         >>> accuracy([{"correct": True}, {"correct": False}, {"correct": True}])
         0.6666666666666666
     """
-    # TODO: Implement this function.
-    #   1. Handle the empty-list edge case (return 0.0)
-    #   2. Count how many results have correct == True
-    #   3. Divide by total number of results
-    raise NotImplementedError("Implement accuracy() in Step 5")
+    # Step 5 - Implement this function
+    if not results:
+        return 0.0
+    correct_count = sum(1 for r in results if r.get("correct", False))
+    return correct_count / len(results)
 
 
 # ---------------------------------------------------------------------------
@@ -60,13 +60,23 @@ def precision_per_category(results: list[dict]) -> dict[str, float]:
         >>> precision_per_category(results)
         {'Pothole': 0.5, 'Noise Complaint': 0.0, ...}
     """
-    # TODO: Implement this function.
-    #   1. For each category in VALID_CATEGORIES:
-    #      a. Count true positives: predicted == category AND expected == category
-    #      b. Count false positives: predicted == category AND expected != category
-    #      c. precision = TP / (TP + FP) if (TP + FP) > 0, else 0.0
-    #   2. Return a dict mapping category -> precision
-    raise NotImplementedError("Implement precision_per_category() in Step 5")
+    # Step 5 - Implement this function
+    precision_dict = {}
+    
+    for category in VALID_CATEGORIES:
+        # Count true positives: predicted == category AND expected == category
+        tp = sum(1 for r in results 
+                 if r.get("predicted") == category and r.get("expected") == category)
+        # Count false positives: predicted == category AND expected != category
+        fp = sum(1 for r in results 
+                 if r.get("predicted") == category and r.get("expected") != category)
+        
+        if tp + fp > 0:
+            precision_dict[category] = tp / (tp + fp)
+        else:
+            precision_dict[category] = 0.0
+    
+    return precision_dict
 
 
 # ---------------------------------------------------------------------------
@@ -94,13 +104,23 @@ def recall_per_category(results: list[dict]) -> dict[str, float]:
         >>> recall_per_category(results)
         {'Pothole': 0.5, ...}
     """
-    # TODO: Implement this function.
-    #   1. For each category in VALID_CATEGORIES:
-    #      a. Count true positives: expected == category AND predicted == category
-    #      b. Count false negatives: expected == category AND predicted != category
-    #      c. recall = TP / (TP + FN) if (TP + FN) > 0, else 0.0
-    #   2. Return a dict mapping category -> recall
-    raise NotImplementedError("Implement recall_per_category() in Step 5")
+    # Step 5 - Implement this function
+    recall_dict = {}
+    
+    for category in VALID_CATEGORIES:
+        # Count true positives: expected == category AND predicted == category
+        tp = sum(1 for r in results 
+                 if r.get("expected") == category and r.get("predicted") == category)
+        # Count false negatives: expected == category AND predicted != category
+        fn = sum(1 for r in results 
+                 if r.get("expected") == category and r.get("predicted") != category)
+        
+        if tp + fn > 0:
+            recall_dict[category] = tp / (tp + fn)
+        else:
+            recall_dict[category] = 0.0
+    
+    return recall_dict
 
 
 # ---------------------------------------------------------------------------

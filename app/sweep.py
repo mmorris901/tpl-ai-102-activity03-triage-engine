@@ -48,36 +48,59 @@ def classify_with_params(
     Raises:
         RuntimeError: If the API call fails after handling.
     """
-    # TODO: Implement this function.
-    #
-    # 1. Set up lazy client initialization (same pattern as Step 1):
-    #
-    #    from azure.ai.inference import ChatCompletionsClient
-    #    from azure.ai.inference.models import SystemMessage, UserMessage
-    #    from azure.core.credentials import AzureKeyCredential
-    #
-    #    Use _get_client() pattern to avoid module-level initialization.
-    #
-    # 2. Build system message and user message (reuse from Step 1
-    #    or define a local SYSTEM_MESSAGE)
-    #
-    # 3. Call the API with the given temperature and max_tokens:
-    #    response = client.complete(
-    #        model=os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-4o"),
-    #        messages=[...],
-    #        temperature=temperature,
-    #        max_tokens=max_tokens,
-    #        response_format={"type": "json_object"},
-    #    )
-    #
-    # 4. Extract token usage with extract_token_usage(response)
-    #
-    # 5. Parse the JSON response, validate category
-    #
-    # 6. Measure latency using time.perf_counter() or app.utils.timer()
-    #
-    # 7. Return result dict with all fields
-    raise NotImplementedError("Implement classify_with_params() in Step 5")
+    # Step 5 - Implement this function
+    from azure.ai.inference.models import SystemMessage, UserMessage
+    import json
+    import time
+    
+    # Validate input
+    request_text = request_text.strip()
+    if not request_text:
+        raise ValueError("Request text cannot be empty")
+    
+    # Build prompt
+    prompt_text = f"Classify this Memphis 311 request:\n\n{request_text}\n\nRespond with JSON."
+    
+    # Measure latency
+    start = time.perf_counter()
+    
+    try:
+        # Call the API with parameters
+        response = _get_client().complete(
+            model=os.environ.get("AZURE_OPENAI_DEPLOYMENT", "gpt-4o"),
+            messages=[
+                SystemMessage(content=SYSTEM_MESSAGE),
+                UserMessage(content=prompt_text),
+            ],
+            temperature=temperature,
+            max_tokens=max_tokens,
+            response_format={"type": "json_object"},
+        )
+        
+        latency = time.perf_counter() - start
+        
+        # Extract token usage
+        prompt_tokens = response.usage.prompt_tokens if response.usage else 0
+        completion_tokens = response.usage.completion_tokens if response.usage else 0
+        
+        # Parse the JSON response
+        raw = response.choices[0].message.content
+        parsed = json.loads(raw)
+        
+        # Ensure category is valid
+        if parsed.get("category") not in VALID_CATEGORIES:
+            parsed["category"] = "Other"
+        
+        # Add token usage and latency
+        parsed["prompt_tokens"] = prompt_tokens
+        parsed["completion_tokens"] = completion_tokens
+        parsed["latency_seconds"] = latency
+        
+        return parsed
+        
+    except Exception as e:
+        latency = time.perf_counter() - start
+        raise RuntimeError(f"Failed to classify request: {str(e)}")
 
 
 # Lazy client pattern (students fill this in)
@@ -90,16 +113,24 @@ def _get_client():
     if _client is not None:
         return _client
 
-    # TODO: Uncomment and configure:
-    # from azure.ai.inference import ChatCompletionsClient
-    # from azure.core.credentials import AzureKeyCredential
-    #
-    # _client = ChatCompletionsClient(
-    #     endpoint=os.environ["AZURE_OPENAI_ENDPOINT"],
-    #     credential=AzureKeyCredential(os.environ["AZURE_OPENAI_API_KEY"]),
-    # )
-    # return _client
-    raise NotImplementedError("Set up _get_client() in Step 5")
+    # Step 5 - Initialize the client
+    from azure.ai.inference import ChatCompletionsClient
+    from azure.core.credentials import AzureKeyCredential
+    
+    endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT")
+    api_key = os.environ.get("AZURE_OPENAI_API_KEY")
+    
+    if not endpoint or not api_key:
+        raise EnvironmentError(
+            "AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY must be set. "
+            "See Step 0 in README.md to deploy your model and configure .env"
+        )
+    
+    _client = ChatCompletionsClient(
+        endpoint=endpoint,
+        credential=AzureKeyCredential(api_key),
+    )
+    return _client
 
 
 # This module provides its own SYSTEM_MESSAGE as a working baseline so the
@@ -160,47 +191,48 @@ def run_sweep(
 
     sweep_results = []
 
-    # TODO: Implement the sweep loop.
-    #
-    # For each temperature in temperatures:
-    #   For each max_tok in max_tokens_values:
-    #     tracker = CostTracker()
-    #     results = []
-    #     errors = 0
-    #     latencies = []
-    #
-    #     For each case in eval_cases:
-    #       try:
-    #         result = classify_with_params(
-    #             case["input"],
-    #             temperature=temperature,
-    #             max_tokens=max_tok,
-    #         )
-    #         tracker.record(result["prompt_tokens"], result["completion_tokens"])
-    #         results.append({
-    #             "expected": case["expected_category"],
-    #             "predicted": result["category"],
-    #             "correct": result["category"] == case["expected_category"],
-    #         })
-    #         latencies.append(result["latency_seconds"])
-    #       except Exception:
-    #         errors += 1
-    #
-    #     sweep_results.append({
-    #         "temperature": temperature,
-    #         "max_tokens": max_tok,
-    #         "accuracy": accuracy(results),
-    #         "total_cost": tracker.total_cost,
-    #         "avg_latency": sum(latencies) / len(latencies) if latencies else 0.0,
-    #         "total_prompt_tokens": tracker.total_prompt_tokens,
-    #         "total_completion_tokens": tracker.total_completion_tokens,
-    #         "errors": errors,
-    #     })
-    #
-    #     Print progress: f"  temp={temperature}, max_tokens={max_tok} => "
-    #                     f"accuracy={...:.0%}, cost=${...:.4f}"
+    # Step 5 - Implement the sweep loop
+    for temperature in temperatures:
+        for max_tok in max_tokens_values:
+            tracker = CostTracker()
+            results = []
+            errors = 0
+            latencies = []
 
-    raise NotImplementedError("Implement run_sweep() in Step 5")
+            for case in eval_cases:
+                try:
+                    result = classify_with_params(
+                        case["input"],
+                        temperature=temperature,
+                        max_tokens=max_tok,
+                    )
+                    tracker.record(result["prompt_tokens"], result["completion_tokens"])
+                    results.append({
+                        "expected": case.get("expected_category"),
+                        "predicted": result.get("category"),
+                        "correct": result.get("category") == case.get("expected_category"),
+                    })
+                    latencies.append(result.get("latency_seconds", 0))
+                except Exception as e:
+                    errors += 1
+
+            # Calculate accuracy
+            acc = accuracy(results) if results else 0.0
+            avg_latency = sum(latencies) / len(latencies) if latencies else 0.0
+            
+            config = {
+                "temperature": temperature,
+                "max_tokens": max_tok,
+                "accuracy": acc,
+                "total_cost": tracker.total_cost,
+                "avg_latency": avg_latency,
+                "total_prompt_tokens": tracker.total_prompt_tokens,
+                "total_completion_tokens": tracker.total_completion_tokens,
+                "errors": errors,
+            }
+            sweep_results.append(config)
+            print(f"  temp={temperature}, max_tokens={max_tok} => "
+                  f"accuracy={acc:.0%}, cost=${tracker.total_cost:.4f}")
 
     return sweep_results
 
